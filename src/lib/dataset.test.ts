@@ -17,6 +17,7 @@ function reviewDataset(): Dataset {
     repositories: new Map(repositories.map((r) => [r.id, r])),
     extraLinks: internalLinks,
     vmOrder,
+    hosting: {},
   }
 }
 

@@ -57,6 +57,16 @@ export default function ProductPage() {
           <h2 className="h-sm">About</h2>
           {product.description && <p className="detail__desc">{product.description}</p>}
 
+          {ds.hosting[product.id] && (
+            <>
+              <h2 className="h-sm">Hosting</h2>
+              <dl className="env__review">
+                <div><dt>Provider</dt><dd>{ds.hosting[product.id]!.provider}</dd></div>
+                <div><dt>IP</dt><dd><code>{ds.hosting[product.id]!.ip}</code> <CopyButton value={ds.hosting[product.id]!.ip} label="IP address" /></dd></div>
+              </dl>
+            </>
+          )}
+
           <h2 className="h-sm">Websites and environments</h2>
           {entries.length === 0 ? (
             <p className="muted">No inventory entry is recorded for this product yet.</p>

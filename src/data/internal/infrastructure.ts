@@ -1,4 +1,4 @@
-import type { InfraDetail, InventoryLink, Listing, PortfolioProduct, PublicEntry } from '../types'
+import type { Hosting, InfraDetail, InventoryLink, Listing, PortfolioProduct, PublicEntry } from '../types'
 
 /**
  * SENSITIVE DATA. Loaded as a separate chunk only after sign-in (see src/lib/dataset.ts).
@@ -105,6 +105,11 @@ export const internalProducts: PortfolioProduct[] = [
   { ...base, id: 'winter-park', slug: 'winter-park', name: 'Winter Park', displayName: 'Winter Park',
     inventoryLinks: [{ entryId: 'inv-20', relation: 'primary' }] },
 ]
+
+/** Hosting supplied by the team for products that are not in the VM workbook. */
+export const productHosting: Record<string, Hosting> = {
+  'cf-track': { provider: 'AWS EC2', ip: '3.22.17.206' },
+}
 
 /** Links attached to public products that point at withheld entries. */
 export const internalLinks: Record<string, InventoryLink[]> = {

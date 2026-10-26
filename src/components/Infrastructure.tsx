@@ -107,6 +107,23 @@ function InventoryView() {
         <span className="results-count" role="status" aria-live="polite">{total} entries in {visible.length} VM groups</span>
       </form>
 
+      {Object.keys(ds.hosting).length > 0 && !vm && !cls && (
+        <div className="vm vm--extra">
+          <h3 className="vm__head vm__head--static"><Server size={16} aria-hidden="true" /> Hosted outside the VM inventory</h3>
+          <ul className="vm__list">
+            {Object.entries(ds.hosting).map(([id, h]) => (
+              <li key={id} className="vm-entry">
+                <div className="vm-entry__head"><span className="vm-entry__name">{ds.products.find((p) => p.id === id)?.displayName ?? id}</span></div>
+                <dl className="vm-entry__facts">
+                  <div><dt>Provider</dt><dd>{h.provider}</dd></div>
+                  <div><dt>IP</dt><dd><code>{h.ip}</code> <CopyButton value={h.ip} label="IP address" /></dd></div>
+                </dl>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {visible.length === 0 ? (
         <div className="empty empty--dark"><h3>No inventory entries match</h3><p>Adjust or clear the filters.</p></div>
       ) : (

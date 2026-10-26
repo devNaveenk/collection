@@ -9,6 +9,7 @@ export function buildPublicDataset(): Dataset {
     repositories: new Map(repositories.map((r) => [r.id, r])),
     extraLinks: {},
     vmOrder: [],
+    hosting: {},
   }
 }
 
@@ -27,5 +28,6 @@ export async function loadDataset(): Promise<Dataset> {
     repositories: base.repositories,
     extraLinks: internal.internalLinks,
     vmOrder: internal.vmOrder,
+    hosting: internal.productHosting,
   }
 }

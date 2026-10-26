@@ -88,6 +88,12 @@ export interface JoinedEntry extends PublicEntry {
   infra: InfraDetail | null
 }
 
+/** Hosting recorded for a product outside the VM inventory workbook. */
+export interface Hosting {
+  provider: string
+  ip: string
+}
+
 export interface Dataset {
   reviewMode: boolean
   products: PortfolioProduct[]
@@ -96,4 +102,6 @@ export interface Dataset {
   /** Extra links that only exist in the review dataset. */
   extraLinks: Record<string, InventoryLink[]>
   vmOrder: string[]
+  /** Sign-in-only hosting records keyed by product id. */
+  hosting: Record<string, Hosting>
 }
