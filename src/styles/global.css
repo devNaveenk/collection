@@ -373,3 +373,4 @@ code { font-family: var(--font-mono); font-size: 0.86em; }
   .login__sub { font-size: 0.93rem; }
   .login__panel { padding: 28px 20px 40px; }
 }
+.inv-caption { margin: 0 0 10px; font-size: 0.84rem; color: var(--dark-muted); max-width: 70ch; }

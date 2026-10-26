@@ -120,7 +120,6 @@ export function filterProducts(list: PortfolioProduct[], f: Filters, ds: Dataset
 
 export interface PortfolioMetrics {
   catalogProducts: number
-  listedEnvironments: number
   byClassification: Record<InventoryClassification, number>
   withRepository: number
   /** Review mode only. */
@@ -130,21 +129,12 @@ export interface PortfolioMetrics {
 
 export function computeMetrics(ds: Dataset): PortfolioMetrics {
   const cat = catalogProducts(ds)
-  const publicIds = new Set<string>()
-  for (const p of cat) {
-    for (const { entry } of productEntries(p, ds)) {
-      if (!entry.infra || entry.infra.listing === 'public-catalog') publicIds.add(entry.id)
-    }
-  }
+  // Same unit and rule as the catalog tabs: a product counts under every classification it has.
   const byClassification: Record<InventoryClassification, number> = { Product: 0, UAT: 0, Demo: 0, DEAD: 0 }
-  for (const id of publicIds) {
-    const e = ds.entries.get(id)
-    if (e) byClassification[e.classification] += 1
-  }
+  for (const p of cat) for (const c of productClassifications(p, ds)) byClassification[c] += 1
   const all = [...ds.entries.values()]
   return {
     catalogProducts: cat.length,
-    listedEnvironments: publicIds.size,
     byClassification,
     withRepository: cat.filter((p) => p.repositoryIds.length > 0).length,
     inventoryEntries: ds.reviewMode ? all.length : null,

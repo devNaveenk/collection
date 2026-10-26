@@ -11,11 +11,10 @@ export default function Overview() {
   const { ds } = useDataset()
   const m = computeMetrics(ds)
   const metrics: Metric[] = [
-    { label: 'Products & platforms', value: m.catalogProducts, note: 'Distinct catalog records; multiple URLs or environments count once' },
-    { label: 'Listed environments', value: m.listedEnvironments, note: 'Websites and environments shown in the catalog' },
-    { label: 'Product', value: m.byClassification.Product, note: 'Environments classified Product' },
-    { label: 'UAT', value: m.byClassification.UAT, note: 'Environments classified UAT' },
-    { label: 'Demo', value: m.byClassification.Demo, note: 'Environments classified Demo' },
+    { label: 'Products & platforms', value: m.catalogProducts, note: 'Total in the catalog; each product counts once' },
+    { label: 'Product', value: m.byClassification.Product, note: 'Same count as the Product tab' },
+    { label: 'UAT', value: m.byClassification.UAT, note: 'Same count as the UAT tab' },
+    { label: 'Demo', value: m.byClassification.Demo, note: 'Same count as the Demo tab' },
     { label: 'With source repository', value: m.withRepository, note: 'Repository links supplied so far' },
   ]
   if (m.inventoryEntries !== null) {
@@ -27,8 +26,8 @@ export default function Overview() {
         <p className="eyebrow">Portfolio overview</p>
         <h2 id="overview-title" className="section__title">The portfolio at a glance</h2>
         <p className="section__lede">
-          Figures are calculated from the portfolio data on this site. An inventory entry is a recorded environment or
-          service; it is not the same as a distinct product.
+          Figures are calculated from the portfolio data on this site and match the catalog tabs. A product with both a
+          production and a UAT environment, such as SupportIQ, appears in both tabs.
         </p>
         <dl className="metrics">
           {metrics.map((x) => (

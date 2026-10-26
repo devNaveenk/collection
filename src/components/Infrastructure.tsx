@@ -101,6 +101,7 @@ function InventoryView() {
 
   return (
     <>
+      <p className="inv-caption">Counts here are inventory entries, one per workbook row, so they can differ from the product counts in the catalog above (for example, a backend service has its own row).</p>
       <dl className="inv-summary">
         <div><dt>VM groups</dt><dd>{visible.length}</dd></div>
         <div><dt>Entries</dt><dd>{total}</dd></div>

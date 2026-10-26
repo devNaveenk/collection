@@ -75,9 +75,9 @@ describe('public dataset', () => {
   })
   it('computes metrics from data', () => {
     const m = computeMetrics(ds)
-    expect(m.listedEnvironments).toBe(28)
     expect(m.inventoryEntries).toBeNull()
     expect(m.byClassification.DEAD).toBe(0)
+    expect(m.byClassification).toEqual({ Product: 9, UAT: 2, Demo: 16, DEAD: 0 })
     expect(m.withRepository).toBe(3)
   })
   it('does not inflate product count with multiple URLs', () => {
