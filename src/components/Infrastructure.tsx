@@ -70,7 +70,7 @@ function InventoryView() {
   const { ds } = useDataset()
   const [vm, setVm] = useState('')
   const [cls, setCls] = useState<InventoryClassification | ''>('')
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   const groups = useMemo(() => groupByVm(ds), [ds])
   const visible = useMemo(
@@ -87,11 +87,11 @@ function InventoryView() {
     for (const g of visible) for (const e of g.entries) c[e.classification] += 1
     return c
   }, [visible])
-  const allCollapsed = visible.length > 0 && visible.every((g) => collapsed.has(g.vmId))
+  const allExpanded = visible.length > 0 && visible.every((g) => expanded.has(g.vmId))
   const filtered = Boolean(vm || cls)
 
   function toggle(id: string) {
-    setCollapsed((s) => {
+    setExpanded((s) => {
       const n = new Set(s)
       if (n.has(id)) n.delete(id)
       else n.add(id)
@@ -128,9 +128,9 @@ function InventoryView() {
         <button
           type="button"
           className="btn btn--quiet btn--dark inv-controls__end"
-          onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(visible.map((g) => g.vmId)))}
+          onClick={() => setExpanded(allExpanded ? new Set() : new Set(visible.map((g) => g.vmId)))}
         >
-          {allCollapsed ? 'Expand all' : 'Collapse all'}
+          {allExpanded ? 'Collapse all' : 'Expand all'}
         </button>
       </form>
       <p className="sr-only" role="status" aria-live="polite">{total} entries in {visible.length} VM groups</p>
@@ -155,7 +155,7 @@ function InventoryView() {
       ) : (
         <div className="vm-grid">
           {visible.map((g) => {
-            const isOpen = !collapsed.has(g.vmId)
+            const isOpen = expanded.has(g.vmId)
             const types = CLASSIFICATIONS.map((c) => [c, g.entries.filter((e) => e.classification === c).length] as const).filter(([, n]) => n > 0)
             return (
               <section key={g.vmId} className="vm" aria-labelledby={`vm-${g.vmId}`}>
