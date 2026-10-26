@@ -19,10 +19,7 @@ export default function Overview() {
     { label: 'With source repository', value: m.withRepository, note: 'Repository links supplied so far' },
   ]
   if (m.inventoryEntries !== null) {
-    metrics.push(
-      { label: 'Inventory entries', value: m.inventoryEntries, note: `Across ${m.vmGroups ?? 0} recorded VM groups. Review only` },
-      { label: 'Requires review', value: m.requiresReview ?? 0, note: 'Entries flagged in the inventory import. Review only' },
-    )
+    metrics.push({ label: 'Inventory entries', value: m.inventoryEntries, note: `Across ${m.vmGroups ?? 0} recorded VM groups` })
   }
   return (
     <section id="overview" className="section" aria-labelledby="overview-title">

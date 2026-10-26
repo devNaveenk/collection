@@ -1,9 +1,9 @@
-import { ChevronDown, ClipboardCheck, Lock, Server, TriangleAlert } from 'lucide-react'
+import { ChevronDown, Lock, Server } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { InventoryClassification, JoinedEntry } from '../data/types'
 import { useDataset } from '../lib/DatasetContext'
 import { CLASSIFICATIONS, entryUrls, groupByVm } from '../lib/selectors'
-import { ClassBadge, OpBadge } from './Badges'
+import { ClassBadge, NoteBadge } from './Badges'
 import CopyButton from './CopyButton'
 import ExternalLink from './ExternalLink'
 
@@ -12,11 +12,9 @@ function PublicNotice() {
     <div className="infra-locked">
       <Lock size={22} aria-hidden="true" />
       <div>
-        <h3>Technical inventory is held for internal review</h3>
+        <h3>Technical inventory is available after sign-in</h3>
         <p>
-          Hosting details, internal-only entries and operational notes are not published on this site. They will be
-          added only after the organization approves the specific information to be shown. Public product websites are
-          listed in the catalog above.
+          Sign in to view the recorded hosting inventory.
         </p>
       </div>
     </div>
@@ -31,10 +29,7 @@ function EntryRow({ e }: { e: JoinedEntry }) {
       <div className="vm-entry__head">
         <span className="vm-entry__name">{e.applicationName}</span>
         <ClassBadge value={e.classification} />
-        <OpBadge value={i.operationalState} />
-        {i.listing !== 'public-catalog' && (
-          <span className="badge badge--hold">{i.listing === 'internal-only' ? 'Not in public catalog' : 'Held for review'}</span>
-        )}
+        {i.note && <NoteBadge value={i.note} />}
       </div>
       <dl className="vm-entry__facts">
         <div>
@@ -61,37 +56,17 @@ function EntryRow({ e }: { e: JoinedEntry }) {
         </div>
         <div>
           <dt>Port</dt>
-          <dd>{i.port !== null ? <code>{i.port}</code> : (i.portNote ?? 'Not provided')}</dd>
+          <dd>{i.port !== null ? <code>{i.port}</code> : 'Not provided'}</dd>
         </div>
-        {i.notes.length > 0 && (
-          <div className="wide">
-            <dt>Operational notes (as recorded)</dt>
-            <dd>{i.notes.join(' ')}</dd>
-          </div>
-        )}
-        {i.vmResolution === 'inherited-ambiguous' && (
-          <div className="wide">
-            <dt>VM association</dt>
-            <dd>Inherited from the preceding group (blank VM cell); ambiguous.</dd>
-          </div>
-        )}
       </dl>
-      {i.reviewReasons.length > 0 && (
-        <ul className="review-reasons">
-          {i.reviewReasons.map((r) => (
-            <li key={r}><TriangleAlert size={14} aria-hidden="true" /> {r}</li>
-          ))}
-        </ul>
-      )}
     </li>
   )
 }
 
-function ReviewInventory() {
+function InventoryView() {
   const { ds } = useDataset()
   const [vm, setVm] = useState('')
   const [cls, setCls] = useState<InventoryClassification | ''>('')
-  const [reviewOnly, setReviewOnly] = useState(false)
   const [open, setOpen] = useState<Record<string, boolean>>({})
 
   const groups = useMemo(() => groupByVm(ds), [ds])
@@ -101,14 +76,13 @@ function ReviewInventory() {
         .filter((g) => !vm || g.vmId === vm)
         .map((g) => ({
           ...g,
-          entries: g.entries.filter((e) => (!cls || e.classification === cls) && (!reviewOnly || e.infra?.requiresReview)),
+          entries: g.entries.filter((e) => !cls || e.classification === cls),
         }))
         .filter((g) => g.entries.length > 0),
-    [groups, vm, cls, reviewOnly],
+    [groups, vm, cls],
   )
   const total = visible.reduce((n, g) => n + g.entries.length, 0)
-  const queue = useMemo(() => [...ds.entries.values()].filter((e) => e.infra?.requiresReview), [ds])
-  const filtered = vm || cls || reviewOnly
+  const filtered = vm || cls
 
   return (
     <>
@@ -127,10 +101,7 @@ function ReviewInventory() {
             {CLASSIFICATIONS.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
-        <label className="check">
-          <input type="checkbox" checked={reviewOnly} onChange={(e) => setReviewOnly(e.target.checked)} /> Needs review only
-        </label>
-        <button type="button" className="btn btn--quiet btn--dark" disabled={!filtered} onClick={() => { setVm(''); setCls(''); setReviewOnly(false) }}>
+        <button type="button" className="btn btn--quiet btn--dark" disabled={!filtered} onClick={() => { setVm(''); setCls('') }}>
           Clear all
         </button>
         <span className="results-count" role="status" aria-live="polite">{total} entries in {visible.length} VM groups</span>
@@ -142,14 +113,13 @@ function ReviewInventory() {
         <div className="vm-grid">
           {visible.map((g) => {
             const isOpen = open[g.vmId] ?? false
-            const review = g.entries.filter((e) => e.infra?.requiresReview).length
             return (
               <section key={g.vmId} className="vm" aria-labelledby={`vm-${g.vmId}`}>
                 <h3 id={`vm-${g.vmId}`} className="vm__head">
-                  <button type="button" aria-expanded={isOpen} aria-controls={`vm-panel-${g.vmId}`} onClick={() => setOpen({ ...open, [g.vmId]: !isOpen })}>
+                  <button type="button" aria-expanded={isOpen} aria-controls={`vm-panel-${g.vmId}`} onClick={() => setOpen((o) => ({ ...o, [g.vmId]: !isOpen }))}>
                     <Server size={16} aria-hidden="true" />
                     <code>{g.vmId}</code>
-                    <span className="vm__count">{g.entries.length} {g.entries.length === 1 ? 'entry' : 'entries'}{review > 0 && ` · ${review} to review`}</span>
+                    <span className="vm__count">{g.entries.length} {g.entries.length === 1 ? 'entry' : 'entries'}</span>
                     <ChevronDown size={16} className="vm__chev" aria-hidden="true" />
                   </button>
                 </h3>
@@ -167,18 +137,6 @@ function ReviewInventory() {
         </div>
       )}
 
-      <div className="queue">
-        <h3><ClipboardCheck size={18} aria-hidden="true" /> Review queue ({queue.length})</h3>
-        <p>Entries flagged during import. Items are preserved as recorded; nothing has been corrected or inferred.</p>
-        <ol>
-          {queue.map((e) => (
-            <li key={e.id}>
-              <strong>{e.applicationName}</strong> <span className="muted-dark">({e.infra!.vmId})</span>
-              <ul>{e.infra!.reviewReasons.map((r) => <li key={r}>{r}</li>)}</ul>
-            </li>
-          ))}
-        </ol>
-      </div>
     </>
   )
 }
@@ -194,7 +152,7 @@ export default function Infrastructure() {
           A human-readable record of applications grouped by the VM identifiers in the inventory snapshot dated 6 October
           2026. It is a recorded snapshot, not live monitoring: nothing here indicates current availability.
         </p>
-        {ds.reviewMode ? <ReviewInventory /> : loading ? <p className="muted-dark">Loading…</p> : <PublicNotice />}
+        {ds.reviewMode ? <InventoryView /> : loading ? <p className="muted-dark">Loading…</p> : <PublicNotice />}
       </div>
     </section>
   )

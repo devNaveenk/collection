@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { InventoryClassification, ProductCategory } from '../data/types'
 import { useDataset } from '../lib/DatasetContext'
-import { CLASSIFICATIONS, EMPTY_FILTERS, catalogProducts, filterProducts, hasActiveFilters, productVms, type Filters } from '../lib/selectors'
+import { CLASSIFICATIONS, EMPTY_FILTERS, catalogProducts, isClassified, filterProducts, hasActiveFilters, productVms, type Filters } from '../lib/selectors'
 import CatalogLegend from './CatalogLegend'
 import ProductCard from './ProductCard'
 
@@ -32,7 +32,7 @@ export default function Catalog() {
   }
 
   const all = useMemo(() => catalogProducts(ds), [ds])
-  const categories = useMemo(() => [...new Set(all.map((p) => p.category))].sort(), [all])
+  const categories = useMemo(() => [...new Set(all.map((p) => p.category).filter(isClassified))].sort(), [all])
   const vms = useMemo(() => [...new Set(all.flatMap((p) => productVms(p, ds)))].sort(), [all, ds])
   const results = useMemo(() => filterProducts(all, filters, ds), [all, filters.q, filters.classification, filters.category, filters.vm, filters.repoOnly, ds]) // eslint-disable-line react-hooks/exhaustive-deps
   const active = hasActiveFilters(filters)
@@ -48,8 +48,7 @@ export default function Catalog() {
           <CatalogLegend />
         </div>
         <p className="section__lede">
-          Search the directory by name, description or domain. Descriptions are cautious and marked where purpose is still
-          awaiting confirmation.
+          Search the directory by name, description or domain.
         </p>
 
         <form className="filters" role="search" aria-label="Filter products" onSubmit={(e) => e.preventDefault()}>

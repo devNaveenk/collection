@@ -30,12 +30,12 @@ Routes: `/` (Hero, Overview, Catalog, Infrastructure, About), `/products/:slug`.
 
 | File | Contents |
 | --- | --- |
-| `src/data/types.ts` | All types. Classification, operational state and completeness are separate. |
+| `src/data/types.ts` | All types. |
 | `src/data/portfolio.ts` | **Public-safe** data: repositories, public entries (name, hostnames, classification), products. |
 | `src/data/internal/infrastructure.ts` | **Review-only** data: VM ids, ports, notes, operational state, review flags, and entries withheld from the public catalog. |
 
-Source of the inventory: the Excel workbook snapshot dated 6 Oct 2026 as transcribed in the project brief. The workbook
-file was not in the repository; values are as supplied there and should be re-checked against the workbook.
+Source of the inventory: `sonlineai-db_Application_URLs.xlsx`, snapshot dated 6 Oct 2026. Types and notes are copied as
+recorded. VoterSMS on `sonlineaiui` was removed at the team's request, so the site lists 32 entries.
 
 ## Adding a product
 1. If it has an inventory entry, add a `PublicEntry` to `publicEntries` (`e('inv-34', 'Name', ['host.example.com'], 'Demo')`).
@@ -43,7 +43,7 @@ file was not in the repository; values are as supplied there and should be re-ch
    with `listing: 'internal-only'`.
 2. Add a product with `p(...)` in `portfolio.ts`, linking entry ids via `inventoryLinks`.
 3. Add a repository to `repositories` and reference its id in `repositoryIds`. Never build a URL from a product name.
-4. Leave `description` as `null` until the purpose is confirmed. Completeness is derived, not hand-set.
+4. Leave `description` as `null` until the purpose is confirmed (nothing is shown for it).
 `npm test` fails if an entry is not linked to exactly one product.
 
 ## Visibility and security
@@ -68,9 +68,10 @@ host lowercased for the href only. This is an assumption to confirm per host (no
 - Approve publishing every hostname in the catalog, including `resourz.net` demos and UAT entries.
 - Decide whether UAT and Demo environments belong on the public site.
 - Keep withheld: Fenix, Winter Park (internal only), BallotDA backend API (DEAD), Sonline AI backend API (disabled),
-  VoterSMS (Nginx default, no vhost), Edukadu (new) (overlapping hostname).
+  as recorded in the workbook (`listing: 'internal-only'`).
 - Confirm VM, port and note data may be published at all (default: no).
-- Confirm Idaho SOS VM association, Edukadu (new) hostnames, `IDAdminrules` casing, and SupportIQ UAT scheme.
+- Confirm the SupportIQ UAT (port 80) link scheme.
+- Workbook cells for Election Automation Software, Edukadu (new) and Indiana CF end in a truncated "www."; the first two use the brief's hostname / drop the www part (see data files).
 - Confirm provisional categories and cautious descriptions; supply official ones.
 - Confirm the repository-to-deployment mapping for Absentee Ballot and VoterSMS; check repository access.
 - Possible relationship of "Indiana CF" to CF-Track is **not** asserted anywhere; confirm if intended.

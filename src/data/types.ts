@@ -1,16 +1,6 @@
 /** Classification exactly as recorded in the source inventory. */
 export type InventoryClassification = 'Product' | 'UAT' | 'Demo' | 'DEAD'
 
-/** Operational state is kept apart from classification and is never inferred from it. */
-export type OperationalState =
-  | 'verified-running' // only with current evidence; unused in the initial import
-  | 'disabled' // explicitly documented
-  | 'inactive' // explicitly documented
-  | 'unknown' // not checked
-  | 'requires-review' // records inconsistent or incomplete
-
-export type DataCompleteness = 'complete' | 'partial' | 'awaiting-confirmation'
-
 /** Provisional UI categories. Not official company classifications. */
 export type ProductCategory =
   | 'Election Technology'
@@ -22,8 +12,6 @@ export type ProductCategory =
   | 'Legal Technology'
   | 'Web Platforms'
   | 'Needs Classification'
-
-export type DescriptionStatus = 'official' | 'cautious' | 'awaiting-confirmation'
 
 export interface Repository {
   id: string
@@ -68,7 +56,6 @@ export interface PortfolioProduct {
   displayName: string
   /** null when the purpose cannot be established from available material. */
   description: string | null
-  descriptionStatus: DescriptionStatus
   category: ProductCategory
   productFamily: string | null
   repositoryIds: string[]
@@ -76,8 +63,7 @@ export interface PortfolioProduct {
   displayInPublicCatalog: boolean
 }
 
-export type VmResolution = 'explicit' | 'inherited-from-group' | 'inherited-ambiguous'
-export type Listing = 'public-catalog' | 'internal-only' | 'hold-for-review'
+export type Listing = 'public-catalog' | 'internal-only'
 
 export interface SourceRef {
   document: string
@@ -86,20 +72,16 @@ export interface SourceRef {
   sequence: number
 }
 
-/** Infrastructure facet. Lives in the review-only data module. */
+/** Infrastructure facet. Lives in the sign-in-only data module. */
 export interface InfraDetail {
   entryId: string
   vmId: string
-  vmResolution: VmResolution
   port: number | null
-  portNote: string | null
-  operationalState: OperationalState
-  notes: string[]
+  /** Note exactly as recorded in the workbook, or null. */
+  note: string | null
   source: SourceRef
   lastVerifiedAt: string
   listing: Listing
-  requiresReview: boolean
-  reviewReasons: string[]
 }
 
 export interface JoinedEntry extends PublicEntry {

@@ -5,7 +5,6 @@ import type {
   PortfolioProduct,
   ProductCategory,
   Repository,
-  DataCompleteness,
   InventoryLink,
 } from '../data/types'
 import { hostToUrl } from './url'
@@ -74,25 +73,10 @@ export function productVms(p: PortfolioProduct, ds: Dataset): string[] {
   return [...set]
 }
 
+export const isClassified = (c: ProductCategory) => c !== 'Needs Classification'
+
 export function catalogProducts(ds: Dataset): PortfolioProduct[] {
   return ds.products.filter((p) => p.displayInPublicCatalog)
-}
-
-export interface Completeness {
-  status: DataCompleteness
-  missing: string[]
-}
-
-/** Derived, never hand-set, so a record cannot claim to be more complete than its data. */
-export function assessCompleteness(p: PortfolioProduct, ds: Dataset): Completeness {
-  const missing: string[] = []
-  if (p.descriptionStatus !== 'official') missing.push('Official description')
-  if (productPublicUrls(p, ds).length === 0) missing.push('Public URL')
-  if (p.repositoryIds.length === 0) missing.push('Source repository')
-  if (p.category === 'Needs Classification') missing.push('Category')
-  const status: DataCompleteness =
-    p.description === null ? 'awaiting-confirmation' : missing.length === 0 ? 'complete' : 'partial'
-  return { status, missing }
 }
 
 export interface Filters {
@@ -141,7 +125,6 @@ export interface PortfolioMetrics {
   withRepository: number
   /** Review mode only. */
   inventoryEntries: number | null
-  requiresReview: number | null
   vmGroups: number | null
 }
 
@@ -165,7 +148,6 @@ export function computeMetrics(ds: Dataset): PortfolioMetrics {
     byClassification,
     withRepository: cat.filter((p) => p.repositoryIds.length > 0).length,
     inventoryEntries: ds.reviewMode ? all.length : null,
-    requiresReview: ds.reviewMode ? all.filter((e) => e.infra?.requiresReview).length : null,
     vmGroups: ds.reviewMode ? new Set(all.map((e) => e.infra?.vmId).filter(Boolean)).size : null,
   }
 }

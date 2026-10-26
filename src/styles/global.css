@@ -180,10 +180,6 @@ code { font-family: var(--font-mono); font-size: 0.86em; }
 .badge--uat { color: #854d0e; background: #fef3c7; border-color: #fcd34d; }
 .badge--demo { color: #1e40af; background: #dbeafe; border-color: #93c5fd; }
 .badge--dead { color: #991b1b; background: #fee2e2; border-color: #fca5a5; }
-.badge--op-unknown, .badge--c-awaiting-confirmation { color: #475569; background: #f1f5f9; border-color: #cbd5e1; }
-.badge--op-disabled, .badge--op-inactive, .badge--op-requires-review, .badge--hold { color: #9a3412; background: #ffedd5; border-color: #fdba74; }
-.badge--op-verified-running, .badge--c-complete { color: #166534; background: #dcfce7; border-color: #86efac; }
-.badge--c-partial { color: #854d0e; background: #fef9c3; border-color: #fde047; }
 
 /* Empty */
 .empty { text-align: center; padding: 56px 20px; border: 1px dashed var(--line); border-radius: var(--radius); display: grid; gap: 8px; justify-items: center; background: var(--surface); }
@@ -305,3 +301,4 @@ code { font-family: var(--font-mono); font-size: 0.86em; }
 .legend__panel dl { margin: 0; display: grid; gap: 8px; }
 .legend__panel dt { font-weight: 600; font-size: 0.88rem; }
 .legend__panel dd { margin: 0; font-size: 0.85rem; color: var(--ink-2); }
+.badge--note { color: #9a3412; background: #ffedd5; border-color: #fdba74; font-weight: 500; }

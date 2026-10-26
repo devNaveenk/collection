@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 import type { PortfolioProduct } from '../data/types'
 import { CATEGORY_ICON, CATEGORY_KEY } from '../lib/categories'
 import { useDataset } from '../lib/DatasetContext'
-import { assessCompleteness, productClassifications, productPublicUrls, productRepositories, productVms } from '../lib/selectors'
-import { ClassBadge, CompletenessBadge } from './Badges'
+import { isClassified, productClassifications, productPublicUrls, productRepositories, productVms } from '../lib/selectors'
+import { ClassBadge } from './Badges'
 import ExternalLink from './ExternalLink'
 
 export default function ProductCard({ product }: { product: PortfolioProduct }) {
@@ -14,7 +14,6 @@ export default function ProductCard({ product }: { product: PortfolioProduct }) 
   const repos = productRepositories(product, ds)
   const classes = productClassifications(product, ds)
   const vms = productVms(product, ds)
-  const completeness = assessCompleteness(product, ds)
   const hasInternalOnly = product.inventoryLinks.length > 0 && urls.length === 0
   return (
     <article className="card" data-cat={CATEGORY_KEY[product.category]}>
@@ -24,7 +23,7 @@ export default function ProductCard({ product }: { product: PortfolioProduct }) 
       </div>
       <div className="card__body">
         <div className="card__meta">
-          <span className="card__category">{product.category}</span>
+          <span className="card__category">{isClassified(product.category) ? product.category : ''}</span>
           <div className="card__badges">
             {classes.map((c) => <ClassBadge key={c} value={c} />)}
           </div>
@@ -32,9 +31,7 @@ export default function ProductCard({ product }: { product: PortfolioProduct }) 
         <h3 className="card__title">
           <Link to={`/products/${product.slug}`} className="card__link">{product.displayName}</Link>
         </h3>
-        <p className={`card__desc${product.description ? '' : ' is-pending'}`}>
-          {product.description ?? 'Description awaiting confirmation.'}
-        </p>
+        {product.description ? <p className="card__desc">{product.description}</p> : <div className="card__desc" />}
         <ul className="card__facts">
           <li>
             <GitBranch size={14} aria-hidden="true" />
@@ -52,7 +49,6 @@ export default function ProductCard({ product }: { product: PortfolioProduct }) 
               </span>
             )}
           </div>
-          <CompletenessBadge value={completeness.status} />
         </div>
         <Link to={`/products/${product.slug}`} className="card__more" aria-label={`View details for ${product.displayName}`}>
           Details <ArrowRight size={14} aria-hidden="true" />

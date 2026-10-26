@@ -1,11 +1,11 @@
 import { ArrowLeft, GitBranch, Lock } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
-import { ClassBadge, CompletenessBadge, OpBadge } from '../components/Badges'
+import { ClassBadge, NoteBadge } from '../components/Badges'
 import CopyButton from '../components/CopyButton'
 import ExternalLink from '../components/ExternalLink'
 import { CATEGORY_ICON, CATEGORY_KEY } from '../lib/categories'
 import { useDataset } from '../lib/DatasetContext'
-import { assessCompleteness, entryUrls, productEntries, productRepositories, productVms } from '../lib/selectors'
+import { entryUrls, isClassified, productEntries, productRepositories, productVms } from '../lib/selectors'
 import type { EntryRelation } from '../data/types'
 import NotFoundPage from './NotFoundPage'
 
@@ -34,7 +34,6 @@ export default function ProductPage() {
   const Icon = CATEGORY_ICON[product.category]
   const entries = productEntries(product, ds)
   const repos = productRepositories(product, ds)
-  const c = assessCompleteness(product, ds)
   const vms = productVms(product, ds)
 
   return (
@@ -45,7 +44,7 @@ export default function ProductPage() {
           <div className="detail__title-row">
             <span className="detail__icon" aria-hidden="true"><Icon size={26} /></span>
             <div>
-              <p className="eyebrow eyebrow--light">{product.category}{product.productFamily ? ` · ${product.productFamily} family` : ''}</p>
+              <p className="eyebrow eyebrow--light">{isClassified(product.category) ? product.category : 'Sonline'}{product.productFamily ? ` · ${product.productFamily} family` : ''}</p>
               <h1 className="detail__title">{product.displayName}</h1>
             </div>
           </div>
@@ -56,12 +55,7 @@ export default function ProductPage() {
       <div className="container detail__grid">
         <div>
           <h2 className="h-sm">About</h2>
-          <p className={product.description ? 'detail__desc' : 'detail__desc muted'}>
-            {product.description ?? 'Description awaiting confirmation.'}
-          </p>
-          {product.descriptionStatus === 'cautious' && (
-            <p className="note">This description is cautious wording based on the product name and inventory record, not an official statement.</p>
-          )}
+          {product.description && <p className="detail__desc">{product.description}</p>}
 
           <h2 className="h-sm">Websites and environments</h2>
           {entries.length === 0 ? (
@@ -75,7 +69,7 @@ export default function ProductPage() {
                     <div className="env__head">
                       <strong>{entry.applicationName}</strong>
                       <ClassBadge value={entry.classification} />
-                      {entry.infra && <OpBadge value={entry.infra.operationalState} />}
+                      {entry.infra?.note && <NoteBadge value={entry.infra.note} />}
                     </div>
                     <p className="env__rel">{RELATION[relation]}</p>
                     {urls.length > 0 && entry.infra && entry.infra.listing !== 'public-catalog' ? (
@@ -100,9 +94,8 @@ export default function ProductPage() {
                     {entry.infra && (
                       <dl className="env__review">
                         <div><dt>VM</dt><dd><code>{entry.infra.vmId}</code></dd></div>
-                        <div><dt>Port</dt><dd>{entry.infra.port !== null ? <code>{entry.infra.port}</code> : (entry.infra.portNote ?? 'Not provided')}</dd></div>
-                        <div><dt>Notes</dt><dd>{entry.infra.notes.length ? entry.infra.notes.join(' ') : 'None recorded'}</dd></div>
-                        {entry.infra.reviewReasons.map((r) => <div key={r} className="env__warn"><dt>Review</dt><dd>{r}</dd></div>)}
+                        <div><dt>Port</dt><dd>{entry.infra.port !== null ? <code>{entry.infra.port}</code> : 'Not provided'}</dd></div>
+                        {entry.infra.note && <div><dt>Notes</dt><dd>{entry.infra.note}</dd></div>}
                       </dl>
                     )}
                   </li>
@@ -114,17 +107,13 @@ export default function ProductPage() {
 
         <aside className="detail__side" aria-label="Product facts">
           <dl>
-            <Field label="Category">{product.category}</Field>
+            {isClassified(product.category) && <Field label="Category">{product.category}</Field>}
             <Field label="Classification">
               {entries.length ? (
                 <span className="badges">{[...new Set(entries.map((x) => x.entry.classification))].map((k) => <ClassBadge key={k} value={k} />)}</span>
               ) : undefined}
             </Field>
-            <Field label="Data completeness">
-              <CompletenessBadge value={c.status} />
-              {c.missing.length > 0 && <span className="missing">Awaiting: {c.missing.join(', ')}</span>}
-            </Field>
-            {ds.reviewMode && <Field label="VM (review)">{vms.length ? vms.join(', ') : undefined}</Field>}
+            {ds.reviewMode && <Field label="VM">{vms.length ? vms.join(', ') : undefined}</Field>}
           </dl>
           <h2 className="h-sm">Source repository</h2>
           {repos.length > 0 ? (

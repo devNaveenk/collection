@@ -1,26 +1,17 @@
-import type {
-  InfraDetail,
-  InventoryClassification,
-  InventoryLink,
-  Listing,
-  OperationalState,
-  PortfolioProduct,
-  PublicEntry,
-  VmResolution,
-} from '../types'
+import type { InfraDetail, InventoryLink, Listing, PortfolioProduct, PublicEntry } from '../types'
 
 /**
- * SENSITIVE DATA. This module is loaded as a separate chunk only after sign-in (see src/lib/dataset.ts).
- * It holds VM identifiers, ports, operational notes and entries withheld from the public catalog.
- * The sign-in is not access control; the chunk is still served to anyone who requests its URL.
+ * SENSITIVE DATA. Loaded as a separate chunk only after sign-in (see src/lib/dataset.ts).
+ * Holds VM identifiers, ports, notes and entries withheld from the public catalog.
+ * Sign-in is not access control; the chunk is still served to anyone who requests its URL.
  *
- * Source: Sonline application inventory (Excel workbook), SSH-verified snapshot
- * dated 6 October 2026, as transcribed in the project brief. The workbook file
- * itself was not present in the repository, so values are as supplied in the brief.
+ * Source: sonlineai-db_Application_URLs.xlsx ("Application Inventory (URLs)"),
+ * SSH-verified snapshot dated 6 Oct 2026. Types and notes are copied as recorded.
+ * VoterSMS (nginx default server, sonlineaiui) was deliberately removed at the team's request.
  */
 
 const SNAPSHOT = '2026-10-06'
-const DOC = 'Sonline application inventory (Excel workbook)'
+const DOC = 'sonlineai-db_Application_URLs.xlsx'
 
 export const vmOrder = [
   'sos-ballotda',
@@ -33,109 +24,62 @@ export const vmOrder = [
   'nadiadb',
 ]
 
-interface Row {
-  seq: number
-  vm: string
-  vmResolution?: VmResolution
-  port: number | null
-  portNote?: string
-  state?: OperationalState
-  notes?: string[]
-  listing?: Listing
-  review?: string[]
-}
-
-const firstOfGroup = new Set([1, 8, 16, 21, 25, 28, 32, 33])
-
-function detail(r: Row): InfraDetail {
-  const review = r.review ?? []
-  return {
-    entryId: `inv-${String(r.seq).padStart(2, '0')}`,
-    vmId: r.vm,
-    vmResolution: r.vmResolution ?? (firstOfGroup.has(r.seq) ? 'explicit' : 'inherited-from-group'),
-    port: r.port,
-    portNote: r.portNote ?? null,
-    operationalState: r.state ?? (review.length > 0 ? 'requires-review' : 'unknown'),
-    notes: r.notes ?? [],
-    source: { document: DOC, snapshotDate: SNAPSHOT, sequence: r.seq },
-    lastVerifiedAt: SNAPSHOT,
-    listing: r.listing ?? 'public-catalog',
-    requiresReview: review.length > 0,
-    reviewReasons: review,
-  }
-}
-
-const NO_VHOST = 'Internal only; no public vhost.'
-const MIXED_CASE =
-  'Hostname recorded with mixed case ("IDAdminrules"). Preserved as recorded; confirm intended spelling.'
+const d = (
+  seq: number,
+  vm: string,
+  port: number | null,
+  note: string | null = null,
+  listing: Listing = 'public-catalog',
+): InfraDetail => ({
+  entryId: `inv-${String(seq).padStart(2, '0')}`,
+  vmId: vm,
+  port,
+  note,
+  source: { document: DOC, snapshotDate: SNAPSHOT, sequence: seq },
+  lastVerifiedAt: SNAPSHOT,
+  listing,
+})
 
 export const infraDetails: InfraDetail[] = [
-  // Group A — sos-ballotda
-  detail({ seq: 1, vm: 'sos-ballotda', port: 8010 }),
-  detail({ seq: 2, vm: 'sos-ballotda', port: 8011 }),
-  detail({ seq: 3, vm: 'sos-ballotda', port: 8091 }),
-  detail({ seq: 4, vm: 'sos-ballotda', port: 8000 }),
-  detail({ seq: 5, vm: 'sos-ballotda', port: 3000 }),
-  detail({ seq: 6, vm: 'sos-ballotda', port: 8001 }),
-  detail({ seq: 7, vm: 'sos-ballotda', port: 8002 }),
-  // Group B — supportiq
-  detail({ seq: 8, vm: 'supportiq', port: 443 }),
-  detail({ seq: 9, vm: 'supportiq', port: 80, review: ['Recorded port is 80; the scheme used for the generated link is the project default and is unverified.'] }),
-  detail({ seq: 10, vm: 'supportiq', port: 8003 }),
-  detail({ seq: 11, vm: 'supportiq', port: 8000 }),
-  detail({ seq: 12, vm: 'supportiq', port: 8002 }),
-  detail({ seq: 13, vm: 'supportiq', port: 8001 }),
-  detail({ seq: 14, vm: 'supportiq', port: 8004 }),
-  detail({ seq: 15, vm: 'supportiq', port: 8005, notes: [NO_VHOST], listing: 'internal-only' }),
-  // Group C — dvkumarnadiaai
-  detail({ seq: 16, vm: 'dvkumarnadiaai', port: 8080 }),
-  detail({ seq: 17, vm: 'dvkumarnadiaai', port: 8081 }),
-  detail({ seq: 18, vm: 'dvkumarnadiaai', port: 9091 }),
-  detail({ seq: 19, vm: 'dvkumarnadiaai', port: 9090, review: [MIXED_CASE] }),
-  detail({ seq: 20, vm: 'dvkumarnadiaai', port: null, portNote: 'Not provided', notes: [NO_VHOST], listing: 'internal-only' }),
-  // Group D — ballotda-website
-  detail({ seq: 21, vm: 'ballotda-website', port: 443 }),
-  detail({ seq: 22, vm: 'ballotda-website', port: 443 }),
-  detail({ seq: 23, vm: 'ballotda-website', port: 443 }),
-  detail({
-    seq: 24, vm: 'ballotda-website', port: 8000, state: 'inactive',
-    notes: ['Nothing listening; vhost dead.'], listing: 'internal-only',
-    review: ['Classified DEAD in the inventory. Historical or inactive service requiring review.'],
-  }),
-  // Group E — edukaduwebsite
-  detail({ seq: 25, vm: 'edukaduwebsite', port: 8000 }),
-  detail({
-    seq: 26, vm: 'edukaduwebsite', port: 8000, listing: 'hold-for-review',
-    review: ['Recorded hostname www.edukadu.com overlaps with the primary Edukadu entry. Preserved as recorded; intended mapping not inferred.'],
-  }),
-  detail({
-    seq: 27, vm: 'edukaduwebsite', vmResolution: 'inherited-ambiguous', port: 9001,
-    review: ['VM cell is blank in the workbook; association with edukaduwebsite is inherited from the preceding group and not independently confirmed.'],
-  }),
-  // Group F — sonlineaiui
-  detail({ seq: 28, vm: 'sonlineaiui', port: 443 }),
-  detail({ seq: 29, vm: 'sonlineaiui', port: 9001 }),
-  detail({
-    seq: 30, vm: 'sonlineaiui', port: 80, notes: ['Uses the Nginx default server; no dedicated vhost.'],
-    listing: 'internal-only',
-    review: ['Separate from "VoterSMS Outreach". Relationship to that entry is by name only and is not confirmed.'],
-  }),
-  detail({
-    seq: 31, vm: 'sonlineaiui', port: 8000, state: 'disabled',
-    notes: ['Serves Sonline.ai API.', 'Service disabled; reboot risk.'], listing: 'internal-only',
-    review: ['Inventory classification is Product, but the service is documented as disabled.'],
-  }),
-  // Group G — nadiaui
-  detail({ seq: 32, vm: 'nadiaui', port: 443 }),
-  // Group H — nadiadb
-  detail({ seq: 33, vm: 'nadiadb', port: 8000, notes: ['Listed under the nadiadb VM in the workbook. Underlying technology not assumed.'] }),
+  d(1, 'sos-ballotda', 8010),
+  d(2, 'sos-ballotda', 8011),
+  d(3, 'sos-ballotda', 8091),
+  d(4, 'sos-ballotda', 8000),
+  d(5, 'sos-ballotda', 3000),
+  d(6, 'sos-ballotda', 8001),
+  d(7, 'sos-ballotda', 8002),
+  d(8, 'supportiq', 443),
+  d(9, 'supportiq', 80),
+  d(10, 'supportiq', 8003),
+  d(11, 'supportiq', 8000),
+  d(12, 'supportiq', 8002),
+  d(13, 'supportiq', 8001),
+  d(14, 'supportiq', 8004),
+  d(15, 'supportiq', 8005, 'No public vhost', 'internal-only'),
+  d(16, 'dvkumarnadiaai', 8080),
+  d(17, 'dvkumarnadiaai', 8081),
+  d(18, 'dvkumarnadiaai', 9091),
+  d(19, 'dvkumarnadiaai', 9090),
+  d(20, 'dvkumarnadiaai', null, 'No public vhost', 'internal-only'),
+  d(21, 'ballotda-website', 443),
+  d(22, 'ballotda-website', 443),
+  d(23, 'ballotda-website', 443),
+  d(24, 'ballotda-website', 8000, 'Nothing listening — vhost dead', 'internal-only'),
+  d(25, 'edukaduwebsite', 8000),
+  d(26, 'edukaduwebsite', 8000),
+  d(27, 'edukaduwebsite', 9001),
+  d(28, 'sonlineaiui', 443),
+  d(29, 'sonlineaiui', 9001),
+  d(31, 'sonlineaiui', 8000, 'Service DISABLED — reboot risk', 'internal-only'),
+  d(32, 'nadiaui', 443),
+  d(33, 'nadiadb', 8000),
 ]
 
 const i = (
   id: string,
   applicationName: string,
   domains: string[],
-  classification: InventoryClassification,
+  classification: PublicEntry['classification'],
   urlState: PublicEntry['urlState'],
 ): PublicEntry => ({ id, applicationName, domains, classification, urlState })
 
@@ -144,8 +88,6 @@ export const internalEntries: PublicEntry[] = [
   i('inv-15', 'Fenix', [], 'Demo', 'internal-only'),
   i('inv-20', 'Winter Park', [], 'Demo', 'internal-only'),
   i('inv-24', 'BallotDA backend API', ['backendapi.ballotda.com'], 'DEAD', 'url'),
-  i('inv-26', 'Edukadu (new)', ['new.edukadu.com', 'www.edukadu.com'], 'Product', 'url'),
-  i('inv-30', 'VoterSMS', [], 'Demo', 'not-provided'),
   i('inv-31', 'Sonline AI backend API', [], 'Product', 'not-provided'),
 ]
 
@@ -153,7 +95,6 @@ const base = {
   repositoryIds: [],
   productFamily: null,
   displayInPublicCatalog: false,
-  descriptionStatus: 'awaiting-confirmation' as const,
   description: null,
   category: 'Needs Classification' as const,
 }
@@ -168,7 +109,5 @@ export const internalProducts: PortfolioProduct[] = [
 /** Links attached to public products that point at withheld entries. */
 export const internalLinks: Record<string, InventoryLink[]> = {
   ballotda: [{ entryId: 'inv-24', relation: 'backend-service' }],
-  edukadu: [{ entryId: 'inv-26', relation: 'related-environment' }],
-  votersms: [{ entryId: 'inv-30', relation: 'same-name-unconfirmed' }],
   'sonline-ai': [{ entryId: 'inv-31', relation: 'backend-service' }],
 }

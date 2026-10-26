@@ -5,10 +5,7 @@ const TERMS: { term: string; meaning: string }[] = [
   { term: 'Product', meaning: 'Listed as a Product in the inventory.' },
   { term: 'UAT', meaning: 'A user-acceptance testing environment.' },
   { term: 'Demo', meaning: 'A demonstration site, not necessarily a commercial product.' },
-  { term: 'Complete', meaning: 'Official description, public URL, repository and category are all on record.' },
-  { term: 'Partial', meaning: 'Some details are on record; others are still missing.' },
-  { term: 'Awaiting confirmation', meaning: 'The purpose is not confirmed yet, so no description is shown.' },
-  { term: 'Needs Classification', meaning: 'Category not decided yet; categories are provisional.' },
+  { term: 'DEAD', meaning: 'Recorded as dead in the inventory; not an active product.' },
   { term: 'Repository not provided', meaning: 'No source repository link has been supplied yet.' },
   { term: 'Internal only / URL not provided', meaning: 'No public website address is on record.' },
 ]
