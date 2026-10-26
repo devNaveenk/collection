@@ -52,6 +52,14 @@ file was not in the repository; values are as supplied there and should be re-ch
 - No credentials, SSH details, private addresses or secrets exist in the repo (only password hashes, once added).
 - The infrastructure view is a recorded snapshot, not monitoring. No status is inferred; `verified-running` is unused.
 
+## Security headers
+`public/_headers` (Netlify) sets a strict CSP (`default-src 'none'`, scripts/styles/images/fonts/connect from `self` only,
+no inline code, no framing, no `base`/`object`), HSTS, `nosniff`, `no-referrer`, a locked-down Permissions-Policy,
+COOP/CORP, `noindex`, and immutable caching for hashed assets. `robots.txt` disallows crawling. The app needs no inline
+scripts or styles; if you add any (or a third-party script, font or analytics), update the CSP deliberately.
+These headers harden the page against XSS and framing; they do not make the sign-in a real access control.
+On other hosts, copy the same headers into that host's configuration.
+
 ## URL assumption
 The inventory records hostnames only. Links are built as `https://<host>` (`src/lib/url.ts`, `PUBLIC_URL_SCHEME`),
 host lowercased for the href only. This is an assumption to confirm per host (notably the port-80 SupportIQ UAT entry).
