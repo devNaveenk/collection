@@ -304,3 +304,10 @@ code { font-family: var(--font-mono); font-size: 0.86em; }
 .badge--note { color: #9a3412; background: #ffedd5; border-color: #fdba74; font-weight: 500; }
 .vm--extra { margin-bottom: 14px; max-width: 520px; }
 .vm__head--static { display: flex; align-items: center; gap: 10px; padding: 14px 16px; font-size: 1rem; font-family: var(--font-body); }
+
+/* Classification tabs */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.tab { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; transition: background .15s, color .15s; }
+.tab:hover { background: var(--paper); }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.tab__count { font-size: 0.8rem; font-weight: 500; opacity: .75; }

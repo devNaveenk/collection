@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 import type { PortfolioProduct } from '../data/types'
 import { CATEGORY_ICON, CATEGORY_KEY } from '../lib/categories'
 import { useDataset } from '../lib/DatasetContext'
-import { isClassified, productClassifications, productPublicUrls, productRepositories, productVms } from '../lib/selectors'
-import { ClassBadge } from './Badges'
+import { isClassified, productClassifications, productEntries, productPublicUrls, productRepositories, productVms } from '../lib/selectors'
+import { ClassBadge, NoteBadge } from './Badges'
 import ExternalLink from './ExternalLink'
 
 export default function ProductCard({ product }: { product: PortfolioProduct }) {
@@ -14,6 +14,7 @@ export default function ProductCard({ product }: { product: PortfolioProduct }) 
   const repos = productRepositories(product, ds)
   const classes = productClassifications(product, ds)
   const vms = productVms(product, ds)
+  const deadNote = classes.length > 0 && classes.every((c) => c === 'DEAD') ? (productEntries(product, ds)[0]?.entry.infra?.note ?? 'Inactive') : null
   const hasInternalOnly = product.inventoryLinks.length > 0 && urls.length === 0
   return (
     <article className="card" data-cat={CATEGORY_KEY[product.category]}>
@@ -41,7 +42,9 @@ export default function ProductCard({ product }: { product: PortfolioProduct }) 
         </ul>
         <div className="card__footer">
           <div className="card__actions">
-            {urls[0] ? (
+            {deadNote ? (
+              <NoteBadge value={deadNote} />
+            ) : urls[0] ? (
               <ExternalLink href={urls[0].href} className="link link--strong" label={`Visit ${product.displayName} website`}>Visit Website</ExternalLink>
             ) : (
               <span className="muted">

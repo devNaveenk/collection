@@ -1,20 +1,23 @@
 import { SearchX, Search, X } from 'lucide-react'
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import type { InventoryClassification, ProductCategory } from '../data/types'
+import type { InventoryClassification } from '../data/types'
 import { useDataset } from '../lib/DatasetContext'
-import { CLASSIFICATIONS, EMPTY_FILTERS, catalogProducts, isClassified, filterProducts, hasActiveFilters, productVms, type Filters } from '../lib/selectors'
+import { CLASSIFICATIONS, EMPTY_FILTERS, catalogProducts, filterProducts, hasActiveFilters, productVms, type Filters } from '../lib/selectors'
 import CatalogLegend from './CatalogLegend'
 import ProductCard from './ProductCard'
+
+const DEFAULT_TAB: InventoryClassification = 'Product'
 
 export default function Catalog() {
   const { ds, loading } = useDataset()
   const [params, setParams] = useSearchParams()
 
+  const envParam = params.get('env') as InventoryClassification | null
+  const tab: InventoryClassification = envParam && CLASSIFICATIONS.includes(envParam) ? envParam : DEFAULT_TAB
   const filters: Filters = {
     q: params.get('q') ?? '',
-    classification: (params.get('env') as InventoryClassification | null) ?? '',
-    category: (params.get('cat') as ProductCategory | null) ?? '',
+    classification: tab,
     vm: params.get('vm') ?? '',
     repoOnly: params.get('repo') === '1',
   }
@@ -24,18 +27,21 @@ export default function Catalog() {
     const p = new URLSearchParams(params)
     const set = (k: string, v: string) => (v ? p.set(k, v) : p.delete(k))
     set('q', f.q)
-    set('env', f.classification)
-    set('cat', f.category)
+    set('env', f.classification === DEFAULT_TAB ? '' : f.classification)
     set('vm', f.vm)
     set('repo', f.repoOnly ? '1' : '')
     setParams(p, { replace: true, preventScrollReset: true })
   }
 
   const all = useMemo(() => catalogProducts(ds), [ds])
-  const categories = useMemo(() => [...new Set(all.map((p) => p.category).filter(isClassified))].sort(), [all])
   const vms = useMemo(() => [...new Set(all.flatMap((p) => productVms(p, ds)))].sort(), [all, ds])
-  const results = useMemo(() => filterProducts(all, filters, ds), [all, filters.q, filters.classification, filters.category, filters.vm, filters.repoOnly, ds]) // eslint-disable-line react-hooks/exhaustive-deps
+  const counts = useMemo(() => {
+    const base = { ...EMPTY_FILTERS, q: filters.q, vm: filters.vm, repoOnly: filters.repoOnly }
+    return Object.fromEntries(CLASSIFICATIONS.map((c) => [c, filterProducts(all, { ...base, classification: c }, ds).length])) as Record<InventoryClassification, number>
+  }, [all, ds, filters.q, filters.vm, filters.repoOnly])
+  const results = useMemo(() => filterProducts(all, filters, ds), [all, filters.q, filters.classification, filters.vm, filters.repoOnly, ds]) // eslint-disable-line react-hooks/exhaustive-deps
   const active = hasActiveFilters(filters)
+  const tabs = CLASSIFICATIONS.filter((c) => ds.reviewMode || c !== 'DEAD')
 
   return (
     <section id="products" className="section section--tint" aria-labelledby="products-title">
@@ -48,8 +54,25 @@ export default function Catalog() {
           <CatalogLegend />
         </div>
         <p className="section__lede">
-          Search the directory by name, description or domain.
+          Browse by classification. Search by name, description or domain.
         </p>
+
+        <div className="tabs" role="tablist" aria-label="Classification">
+          {tabs.map((c) => (
+            <button
+              key={c}
+              type="button"
+              role="tab"
+              id={`tab-${c}`}
+              aria-selected={tab === c}
+              aria-controls="catalog-panel"
+              className="tab"
+              onClick={() => update({ classification: c })}
+            >
+              {c} <span className="tab__count">{counts[c]}</span>
+            </button>
+          ))}
+        </div>
 
         <form className="filters" role="search" aria-label="Filter products" onSubmit={(e) => e.preventDefault()}>
           <div className="field field--search">
@@ -59,23 +82,9 @@ export default function Catalog() {
               <input id="f-q" type="search" value={filters.q} placeholder="Name, description or domain" onChange={(e) => update({ q: e.target.value })} />
             </div>
           </div>
-          <div className="field">
-            <label htmlFor="f-env">Classification</label>
-            <select id="f-env" value={filters.classification} onChange={(e) => update({ classification: e.target.value as Filters['classification'] })}>
-              <option value="">All</option>
-              {CLASSIFICATIONS.filter((c) => ds.reviewMode || c !== 'DEAD').map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="f-cat">Category</label>
-            <select id="f-cat" value={filters.category} onChange={(e) => update({ category: e.target.value as Filters['category'] })}>
-              <option value="">All</option>
-              {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
           {ds.reviewMode && (
             <div className="field">
-              <label htmlFor="f-vm">VM (review)</label>
+              <label htmlFor="f-vm">VM</label>
               <select id="f-vm" value={filters.vm} onChange={(e) => update({ vm: e.target.value })}>
                 <option value="">All</option>
                 {vms.map((v) => <option key={v} value={v}>{v}</option>)}
@@ -86,27 +95,29 @@ export default function Catalog() {
             <input type="checkbox" checked={filters.repoOnly} onChange={(e) => update({ repoOnly: e.target.checked })} />
             Has source repository
           </label>
-          <button type="button" className="btn btn--quiet" onClick={() => update({ ...EMPTY_FILTERS })} disabled={!active}>
+          <button type="button" className="btn btn--quiet" onClick={() => update({ q: '', vm: '', repoOnly: false })} disabled={!active}>
             <X size={14} aria-hidden="true" /> Clear all
           </button>
         </form>
 
         <p className="results-count" role="status" aria-live="polite">
-          {loading ? 'Loading catalog…' : `Showing ${results.length} of ${all.length} products`}
+          {loading ? 'Loading catalog…' : `Showing ${results.length} ${tab} ${results.length === 1 ? 'entry' : 'entries'}`}
         </p>
 
-        {results.length > 0 ? (
-          <div className="grid">
-            {results.map((p) => <ProductCard key={p.id} product={p} />)}
-          </div>
-        ) : (
-          <div className="empty">
-            <SearchX size={28} aria-hidden="true" />
-            <h3>No products match these filters</h3>
-            <p>Try a different search term or remove a filter.</p>
-            <button type="button" className="btn btn--primary btn--sm" onClick={() => update({ ...EMPTY_FILTERS })}>Clear all filters</button>
-          </div>
-        )}
+        <div id="catalog-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
+          {results.length > 0 ? (
+            <div className="grid">
+              {results.map((p) => <ProductCard key={p.id} product={p} />)}
+            </div>
+          ) : (
+            <div className="empty">
+              <SearchX size={28} aria-hidden="true" />
+              <h3>No {tab} entries match</h3>
+              <p>Try a different search term, another tab, or clear the filters.</p>
+              <button type="button" className="btn btn--primary btn--sm" onClick={() => update({ q: '', vm: '', repoOnly: false })}>Clear all filters</button>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   )

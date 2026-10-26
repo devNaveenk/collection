@@ -117,7 +117,7 @@ const p = (
 export const products: PortfolioProduct[] = [
   p('cf-track', 'CF-Track', 'Campaign Finance',
     'Campaign Finance Track (CF-Track) is a campaign-finance tracking product.',
-     [], { displayName: 'CF-Track', repositoryIds: ['repo-cftrack'] }),
+     [], { displayName: 'CF-Track', repositoryIds: ['repo-cftrack'], listedAs: 'Product' }),
   p('absentee-ballot', 'Absentee Ballot', 'Election Technology',
     'Absentee ballot application. Provisional name; recorded in the inventory as a UAT environment.',
      [link('inv-01')], { repositoryIds: ['repo-absentee'] }),

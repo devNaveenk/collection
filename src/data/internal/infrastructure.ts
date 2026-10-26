@@ -100,6 +100,9 @@ const base = {
 }
 
 export const internalProducts: PortfolioProduct[] = [
+  // Listed (signed-in only) so the DEAD classification has a record to show.
+  { ...base, id: 'ballotda-backend-api', slug: 'ballotda-backend-api', name: 'BallotDA backend API', displayName: 'BallotDA backend API',
+    displayInPublicCatalog: true, inventoryLinks: [{ entryId: 'inv-24', relation: 'primary' }] },
   { ...base, id: 'fenix', slug: 'fenix', name: 'Fenix', displayName: 'Fenix',
     inventoryLinks: [{ entryId: 'inv-15', relation: 'primary' }] },
   { ...base, id: 'winter-park', slug: 'winter-park', name: 'Winter Park', displayName: 'Winter Park',
@@ -113,6 +116,5 @@ export const productHosting: Record<string, Hosting> = {
 
 /** Links attached to public products that point at withheld entries. */
 export const internalLinks: Record<string, InventoryLink[]> = {
-  ballotda: [{ entryId: 'inv-24', relation: 'backend-service' }],
   'sonline-ai': [{ entryId: 'inv-31', relation: 'backend-service' }],
 }

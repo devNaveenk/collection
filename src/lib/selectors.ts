@@ -52,6 +52,7 @@ export function productPublicUrls(p: PortfolioProduct, ds: Dataset): PublicUrl[]
   const out: PublicUrl[] = []
   for (const { entry } of productEntries(p, ds)) {
     if (entry.infra && entry.infra.listing !== 'public-catalog') continue
+    if (entry.classification === 'DEAD') continue
     for (const u of entryUrls(entry)) {
       if (!seen.has(u.href)) {
         seen.add(u.href)
@@ -64,6 +65,7 @@ export function productPublicUrls(p: PortfolioProduct, ds: Dataset): PublicUrl[]
 
 export function productClassifications(p: PortfolioProduct, ds: Dataset): InventoryClassification[] {
   const set = new Set(productEntries(p, ds).map((r) => r.entry.classification))
+  if (set.size === 0 && p.listedAs) set.add(p.listedAs)
   return CLASSIFICATIONS.filter((c) => set.has(c))
 }
 
@@ -82,23 +84,21 @@ export function catalogProducts(ds: Dataset): PortfolioProduct[] {
 export interface Filters {
   q: string
   classification: InventoryClassification | ''
-  category: ProductCategory | ''
   vm: string
   repoOnly: boolean
 }
 
-export const EMPTY_FILTERS: Filters = { q: '', classification: '', category: '', vm: '', repoOnly: false }
+export const EMPTY_FILTERS: Filters = { q: '', classification: '', vm: '', repoOnly: false }
 
 export function hasActiveFilters(f: Filters): boolean {
-  return Boolean(f.q.trim() || f.classification || f.category || f.vm || f.repoOnly)
+  return Boolean(f.q.trim() || f.vm || f.repoOnly)
 }
 
 export function filterProducts(list: PortfolioProduct[], f: Filters, ds: Dataset): PortfolioProduct[] {
   const q = f.q.trim().toLowerCase()
   return list.filter((p) => {
     const entries = productEntries(p, ds)
-    if (f.classification && !entries.some((r) => r.entry.classification === f.classification)) return false
-    if (f.category && p.category !== f.category) return false
+    if (f.classification && !productClassifications(p, ds).includes(f.classification)) return false
     if (f.vm && !entries.some((r) => r.entry.infra?.vmId === f.vm)) return false
     if (f.repoOnly && p.repositoryIds.length === 0) return false
     if (q) {

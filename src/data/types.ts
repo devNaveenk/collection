@@ -61,6 +61,8 @@ export interface PortfolioProduct {
   repositoryIds: string[]
   inventoryLinks: InventoryLink[]
   displayInPublicCatalog: boolean
+  /** Tab to list under when the product has no inventory entry of its own. */
+  listedAs?: InventoryClassification
 }
 
 export type Listing = 'public-catalog' | 'internal-only'
