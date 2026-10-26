@@ -123,7 +123,7 @@ export default function ProductPage() {
                 <span className="badges">{[...new Set(entries.map((x) => x.entry.classification))].map((k) => <ClassBadge key={k} value={k} />)}</span>
               ) : undefined}
             </Field>
-            {ds.reviewMode && <Field label="VM">{vms.length ? vms.join(', ') : undefined}</Field>}
+            {ds.reviewMode && <Field label="VM">{vms.length ? vms.join(', ') : ds.hosting[product.id] ? `None (hosted on ${ds.hosting[product.id]!.provider})` : undefined}</Field>}
           </dl>
           <h2 className="h-sm">Source repository</h2>
           {repos.length > 0 ? (

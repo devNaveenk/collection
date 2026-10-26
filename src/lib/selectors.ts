@@ -88,6 +88,9 @@ export interface Filters {
   repoOnly: boolean
 }
 
+/** VM filter value for products that have no VM in the inventory (for example hosted elsewhere). */
+export const NO_VM = '__none'
+
 export const EMPTY_FILTERS: Filters = { q: '', classification: '', vm: '', repoOnly: false }
 
 export function hasActiveFilters(f: Filters): boolean {
@@ -99,7 +102,9 @@ export function filterProducts(list: PortfolioProduct[], f: Filters, ds: Dataset
   return list.filter((p) => {
     const entries = productEntries(p, ds)
     if (f.classification && !productClassifications(p, ds).includes(f.classification)) return false
-    if (f.vm && !entries.some((r) => r.entry.infra?.vmId === f.vm)) return false
+    if (f.vm === NO_VM) {
+      if (entries.some((r) => r.entry.infra)) return false
+    } else if (f.vm && !entries.some((r) => r.entry.infra?.vmId === f.vm)) return false
     if (f.repoOnly && p.repositoryIds.length === 0) return false
     if (q) {
       const hay = [

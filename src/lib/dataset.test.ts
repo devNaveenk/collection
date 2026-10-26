@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { publicEntries, products, repositories } from '../data/portfolio'
 import { infraDetails, internalEntries, internalLinks, internalProducts, vmOrder } from '../data/internal/infrastructure'
 import type { Dataset, JoinedEntry } from '../data/types'
-import { catalogProducts, computeMetrics, EMPTY_FILTERS, filterProducts, groupByVm, productPublicUrls } from './selectors'
+import { catalogProducts, computeMetrics, EMPTY_FILTERS, NO_VM, filterProducts, groupByVm, productPublicUrls } from './selectors'
 import { buildPublicDataset } from './dataset'
 import { hostToUrl, safeHttpUrl } from './url'
 
@@ -92,6 +92,22 @@ describe('public dataset', () => {
     expect(filterProducts(list, { ...EMPTY_FILTERS, repoOnly: true }, ds).map((p) => p.id).sort()).toEqual(['absentee-ballot', 'cf-track', 'votersms'])
     expect(filterProducts(list, { ...EMPTY_FILTERS, classification: 'UAT', q: 'supportiq' }, ds).map((p) => p.id)).toEqual(['supportiq'])
     expect(filterProducts(list, { ...EMPTY_FILTERS, classification: 'DEAD' }, ds)).toHaveLength(0)
+  })
+})
+
+describe('VM filter', () => {
+  const ds = reviewDataset()
+  const list = catalogProducts(ds)
+  it('per-VM product counts match the inventory', () => {
+    const count = (vm: string, c?: 'Product') => filterProducts(list, { ...EMPTY_FILTERS, vm, classification: c ?? '' }, ds).length
+    expect(Object.fromEntries(vmOrder.map((v) => [v, count(v)]))).toEqual({
+      'sos-ballotda': 7, supportiq: 6, dvkumarnadiaai: 4, 'ballotda-website': 3, edukaduwebsite: 2, sonlineaiui: 2, nadiaui: 1, nadiadb: 1,
+    })
+    expect(vmOrder.reduce((n, v) => n + count(v, 'Product'), 0)).toBe(8)
+  })
+  it('lists products without a VM under the No VM option', () => {
+    expect(filterProducts(list, { ...EMPTY_FILTERS, vm: NO_VM }, ds).map((p) => p.id)).toEqual(['cf-track'])
+    expect(filterProducts(list, { ...EMPTY_FILTERS, classification: 'Product' }, ds)).toHaveLength(9)
   })
 })
 

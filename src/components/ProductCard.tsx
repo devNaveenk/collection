@@ -39,6 +39,7 @@ export default function ProductCard({ product }: { product: PortfolioProduct }) 
             {repos.length > 0 ? `${repos.length} source repository linked` : 'Repository not provided'}
           </li>
           {ds.reviewMode && vms.length > 0 && <li className="is-review">VM: {vms.join(', ')}</li>}
+          {ds.reviewMode && vms.length === 0 && ds.hosting[product.id] && <li className="is-review">No VM · {ds.hosting[product.id]!.provider}</li>}
         </ul>
         <div className="card__footer">
           <div className="card__actions">

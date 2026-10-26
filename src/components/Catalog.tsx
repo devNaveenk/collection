@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { InventoryClassification } from '../data/types'
 import { useDataset } from '../lib/DatasetContext'
-import { CLASSIFICATIONS, EMPTY_FILTERS, catalogProducts, filterProducts, hasActiveFilters, productVms, type Filters } from '../lib/selectors'
+import { CLASSIFICATIONS, EMPTY_FILTERS, NO_VM, catalogProducts, filterProducts, hasActiveFilters, productVms, type Filters } from '../lib/selectors'
 import CatalogLegend from './CatalogLegend'
 import ProductCard from './ProductCard'
 
@@ -35,6 +35,7 @@ export default function Catalog() {
 
   const all = useMemo(() => catalogProducts(ds), [ds])
   const vms = useMemo(() => [...new Set(all.flatMap((p) => productVms(p, ds)))].sort(), [all, ds])
+  const hasNoVm = useMemo(() => all.some((p) => productVms(p, ds).length === 0), [all, ds])
   const counts = useMemo(() => {
     const base = { ...EMPTY_FILTERS, q: filters.q, vm: filters.vm, repoOnly: filters.repoOnly }
     return Object.fromEntries(CLASSIFICATIONS.map((c) => [c, filterProducts(all, { ...base, classification: c }, ds).length])) as Record<InventoryClassification, number>
@@ -88,6 +89,7 @@ export default function Catalog() {
               <select id="f-vm" value={filters.vm} onChange={(e) => update({ vm: e.target.value })}>
                 <option value="">All</option>
                 {vms.map((v) => <option key={v} value={v}>{v}</option>)}
+                {hasNoVm && <option value={NO_VM}>No VM (hosted outside inventory)</option>}
               </select>
             </div>
           )}
