@@ -6,6 +6,7 @@ const TERMS: { term: string; meaning: string }[] = [
   { term: 'UAT', meaning: 'A user-acceptance testing environment.' },
   { term: 'Demo', meaning: 'A demonstration site, not necessarily a commercial product.' },
   { term: 'DEAD', meaning: 'Recorded as dead in the inventory; not an active product.' },
+  { term: 'No VM', meaning: 'The VM name is not known yet, so the product is not tied to any VM (for example CF-Track).' },
   { term: 'Repository not provided', meaning: 'No source repository link has been supplied yet.' },
   { term: 'Internal only / URL not provided', meaning: 'No public website address is on record.' },
 ]
