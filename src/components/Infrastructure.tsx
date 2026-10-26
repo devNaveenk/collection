@@ -1,4 +1,4 @@
-import { ChevronDown, Lock, Server } from 'lucide-react'
+import { ChevronDown, Cloud, Lock, Server } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { InventoryClassification, JoinedEntry } from '../data/types'
 import { useDataset } from '../lib/DatasetContext'
@@ -13,53 +13,56 @@ function PublicNotice() {
       <Lock size={22} aria-hidden="true" />
       <div>
         <h3>Technical inventory is available after sign-in</h3>
-        <p>
-          Sign in to view the recorded hosting inventory.
-        </p>
+        <p>Sign in to view the recorded hosting inventory.</p>
       </div>
     </div>
   )
 }
 
-function EntryRow({ e }: { e: JoinedEntry }) {
-  const i = e.infra!
+function Hostnames({ e }: { e: JoinedEntry }) {
   const urls = entryUrls(e)
+  if (urls.length === 0) {
+    return <span className="inv-none">{e.urlState === 'internal-only' ? 'Internal only' : 'URL not provided'}</span>
+  }
+  const linkable = e.infra?.listing === 'public-catalog'
   return (
-    <li className="vm-entry">
-      <div className="vm-entry__head">
-        <span className="vm-entry__name">{e.applicationName}</span>
-        <ClassBadge value={e.classification} />
-        {i.note && <NoteBadge value={i.note} />}
-      </div>
-      <dl className="vm-entry__facts">
-        <div>
-          <dt>URL</dt>
-          <dd>
-            {urls.length > 0 ? (
-              <ul className="host-list">
-                {urls.map((u) => (
-                  <li key={u.host}>
-                    <code>{u.host}</code>
-                    <CopyButton value={u.host} label={`hostname ${u.host}`} />
-                    {i.listing === 'public-catalog' && (
-                      <ExternalLink href={u.href} className="link link--sm" label={`Open ${u.host}`}>Open</ExternalLink>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : e.urlState === 'internal-only' ? (
-              'Internal only'
-            ) : (
-              'URL not provided'
-            )}
-          </dd>
-        </div>
-        <div>
-          <dt>Port</dt>
-          <dd>{i.port !== null ? <code>{i.port}</code> : 'Not provided'}</dd>
-        </div>
-      </dl>
-    </li>
+    <ul className="host-list">
+      {urls.map((u) => (
+        <li key={u.host}>
+          <code>{u.host}</code>
+          <CopyButton value={u.host} label={`hostname ${u.host}`} />
+          {linkable && (
+            <ExternalLink href={u.href} className="link link--sm" label={`Open ${u.host}`}>Open</ExternalLink>
+          )}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function VmTable({ id, entries }: { id: string; entries: JoinedEntry[] }) {
+  return (
+    <table id={id} className="inv-table">
+      <thead>
+        <tr><th scope="col">Application</th><th scope="col">Hostname</th><th scope="col">Port</th><th scope="col">Type</th></tr>
+      </thead>
+      <tbody>
+        {entries.map((e) => {
+          const i = e.infra!
+          return (
+            <tr key={e.id}>
+              <th scope="row" data-label="Application">
+                <span className="inv-name">{e.applicationName}</span>
+                {i.note && <NoteBadge value={i.note} />}
+              </th>
+              <td data-label="Hostname"><Hostnames e={e} /></td>
+              <td data-label="Port">{i.port !== null ? <code>{i.port}</code> : <span className="inv-none">—</span>}</td>
+              <td data-label="Type"><ClassBadge value={e.classification} /></td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
   )
 }
 
@@ -67,26 +70,46 @@ function InventoryView() {
   const { ds } = useDataset()
   const [vm, setVm] = useState('')
   const [cls, setCls] = useState<InventoryClassification | ''>('')
-  const [open, setOpen] = useState<Record<string, boolean>>({})
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
 
   const groups = useMemo(() => groupByVm(ds), [ds])
   const visible = useMemo(
     () =>
       groups
         .filter((g) => !vm || g.vmId === vm)
-        .map((g) => ({
-          ...g,
-          entries: g.entries.filter((e) => !cls || e.classification === cls),
-        }))
+        .map((g) => ({ ...g, entries: g.entries.filter((e) => !cls || e.classification === cls) }))
         .filter((g) => g.entries.length > 0),
     [groups, vm, cls],
   )
   const total = visible.reduce((n, g) => n + g.entries.length, 0)
-  const filtered = vm || cls
+  const counts = useMemo(() => {
+    const c: Record<InventoryClassification, number> = { Product: 0, UAT: 0, Demo: 0, DEAD: 0 }
+    for (const g of visible) for (const e of g.entries) c[e.classification] += 1
+    return c
+  }, [visible])
+  const allCollapsed = visible.length > 0 && visible.every((g) => collapsed.has(g.vmId))
+  const filtered = Boolean(vm || cls)
+
+  function toggle(id: string) {
+    setCollapsed((s) => {
+      const n = new Set(s)
+      if (n.has(id)) n.delete(id)
+      else n.add(id)
+      return n
+    })
+  }
 
   return (
     <>
-      <form className="filters filters--infra" onSubmit={(e) => e.preventDefault()} aria-label="Filter inventory">
+      <dl className="inv-summary">
+        <div><dt>VM groups</dt><dd>{visible.length}</dd></div>
+        <div><dt>Entries</dt><dd>{total}</dd></div>
+        {CLASSIFICATIONS.map((c) => (
+          <div key={c}><dt>{c}</dt><dd>{counts[c]}</dd></div>
+        ))}
+      </dl>
+
+      <form className="inv-controls" onSubmit={(e) => e.preventDefault()} aria-label="Filter inventory">
         <div className="field">
           <label htmlFor="i-vm">VM</label>
           <select id="i-vm" value={vm} onChange={(e) => setVm(e.target.value)}>
@@ -95,32 +118,35 @@ function InventoryView() {
           </select>
         </div>
         <div className="field">
-          <label htmlFor="i-cls">Classification</label>
+          <label htmlFor="i-cls">Type</label>
           <select id="i-cls" value={cls} onChange={(e) => setCls(e.target.value as InventoryClassification | '')}>
             <option value="">All</option>
             {CLASSIFICATIONS.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
-        <button type="button" className="btn btn--quiet btn--dark" disabled={!filtered} onClick={() => { setVm(''); setCls('') }}>
-          Clear all
+        <button type="button" className="btn btn--quiet btn--dark" disabled={!filtered} onClick={() => { setVm(''); setCls('') }}>Clear all</button>
+        <button
+          type="button"
+          className="btn btn--quiet btn--dark inv-controls__end"
+          onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(visible.map((g) => g.vmId)))}
+        >
+          {allCollapsed ? 'Expand all' : 'Collapse all'}
         </button>
-        <span className="results-count" role="status" aria-live="polite">{total} entries in {visible.length} VM groups</span>
       </form>
+      <p className="sr-only" role="status" aria-live="polite">{total} entries in {visible.length} VM groups</p>
 
       {Object.keys(ds.hosting).length > 0 && !vm && !cls && (
-        <div className="vm vm--extra">
-          <h3 className="vm__head vm__head--static"><Server size={16} aria-hidden="true" /> Hosted outside the VM inventory</h3>
-          <ul className="vm__list">
-            {Object.entries(ds.hosting).map(([id, h]) => (
-              <li key={id} className="vm-entry">
-                <div className="vm-entry__head"><span className="vm-entry__name">{ds.products.find((p) => p.id === id)?.displayName ?? id}</span></div>
-                <dl className="vm-entry__facts">
-                  <div><dt>Provider</dt><dd>{h.provider}</dd></div>
-                  <div><dt>IP</dt><dd><code>{h.ip}</code> <CopyButton value={h.ip} label="IP address" /></dd></div>
-                </dl>
-              </li>
-            ))}
-          </ul>
+        <div className="hosting-strip">
+          <Cloud size={16} aria-hidden="true" />
+          <span className="hosting-strip__label">Hosted outside the VM inventory</span>
+          {Object.entries(ds.hosting).map(([id, h]) => (
+            <span key={id} className="hosting-strip__item">
+              <strong>{ds.products.find((p) => p.id === id)?.displayName ?? id}</strong>
+              <span>{h.provider}</span>
+              <code>{h.ip}</code>
+              <CopyButton value={h.ip} label={`IP address for ${id}`} />
+            </span>
+          ))}
         </div>
       )}
 
@@ -129,31 +155,26 @@ function InventoryView() {
       ) : (
         <div className="vm-grid">
           {visible.map((g) => {
-            const isOpen = open[g.vmId] ?? false
+            const isOpen = !collapsed.has(g.vmId)
+            const types = CLASSIFICATIONS.map((c) => [c, g.entries.filter((e) => e.classification === c).length] as const).filter(([, n]) => n > 0)
             return (
               <section key={g.vmId} className="vm" aria-labelledby={`vm-${g.vmId}`}>
                 <h3 id={`vm-${g.vmId}`} className="vm__head">
-                  <button type="button" aria-expanded={isOpen} aria-controls={`vm-panel-${g.vmId}`} onClick={() => setOpen((o) => ({ ...o, [g.vmId]: !isOpen }))}>
+                  <button type="button" aria-expanded={isOpen} aria-controls={`vm-panel-${g.vmId}`} onClick={() => toggle(g.vmId)}>
                     <Server size={16} aria-hidden="true" />
-                    <code>{g.vmId}</code>
-                    <span className="vm__count">{g.entries.length} {g.entries.length === 1 ? 'entry' : 'entries'}</span>
+                    <code className="vm__name">{g.vmId}</code>
+                    <span className="vm__types">
+                      {types.map(([c, n]) => <span key={c} className={`vm__type vm__type--${c.toLowerCase()}`}>{n} {c}</span>)}
+                    </span>
                     <ChevronDown size={16} className="vm__chev" aria-hidden="true" />
                   </button>
                 </h3>
-                {!isOpen && (
-                  <p className="vm__peek">{g.entries.map((e) => e.applicationName).join(' · ')}</p>
-                )}
-                {isOpen && (
-                  <ul id={`vm-panel-${g.vmId}`} className="vm__list">
-                    {g.entries.map((e) => <EntryRow key={e.id} e={e} />)}
-                  </ul>
-                )}
+                {isOpen && <VmTable id={`vm-panel-${g.vmId}`} entries={g.entries} />}
               </section>
             )
           })}
         </div>
       )}
-
     </>
   )
 }
@@ -166,8 +187,8 @@ export default function Infrastructure() {
         <p className="eyebrow eyebrow--light">Infrastructure inventory</p>
         <h2 id="infra-title" className="section__title">Known application inventory</h2>
         <p className="section__lede">
-          A human-readable record of applications grouped by the VM identifiers in the inventory snapshot dated 6 October
-          2026. It is a recorded snapshot, not live monitoring: nothing here indicates current availability.
+          Applications grouped by the VM identifiers in the inventory snapshot dated 6 October 2026. It is a recorded
+          snapshot, not live monitoring: nothing here indicates current availability.
         </p>
         {ds.reviewMode ? <InventoryView /> : loading ? <p className="muted-dark">Loading…</p> : <PublicNotice />}
       </div>
