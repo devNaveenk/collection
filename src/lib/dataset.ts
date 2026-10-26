@@ -1,9 +1,6 @@
 import { products as publicProducts, publicEntries, repositories } from '../data/portfolio'
 import type { Dataset, JoinedEntry } from '../data/types'
 
-/** Replaced at build time. When false, the review-only module is not bundled at all. */
-export const REVIEW_BUILD = import.meta.env.VITE_REVIEW_MODE === 'true'
-
 export function buildPublicDataset(): Dataset {
   return {
     reviewMode: false,
@@ -17,7 +14,6 @@ export function buildPublicDataset(): Dataset {
 
 export async function loadDataset(): Promise<Dataset> {
   const base = buildPublicDataset()
-  if (!REVIEW_BUILD) return base
   const internal = await import('../data/internal/infrastructure')
   const details = new Map(internal.infraDetails.map((d) => [d.entryId, d]))
   const entries = new Map<string, JoinedEntry>()

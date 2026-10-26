@@ -1,7 +1,8 @@
-import { Menu, X } from 'lucide-react'
+import { LogOut, Menu, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { REVIEW_BUILD } from '../lib/dataset'
+import { useAuth } from '../lib/AuthContext'
+import LoginPage from '../pages/LoginPage'
 import { useDataset } from '../lib/DatasetContext'
 import { company } from '../data/portfolio'
 import Wordmark from './Wordmark'
@@ -18,10 +19,12 @@ export default function Layout() {
   const [open, setOpen] = useState(false)
   const { pathname, hash } = useLocation()
   const { loading } = useDataset()
+  const { email, logout } = useAuth()
+  const authed = email !== null
 
   useEffect(() => {
     setOpen(false)
-    if (REVIEW_BUILD && loading) return
+    if (!authed || loading) return
     if (hash) {
       const el = document.getElementById(hash.slice(1))
       if (el) {
@@ -30,7 +33,7 @@ export default function Layout() {
       }
     }
     window.scrollTo(0, 0)
-  }, [pathname, hash, loading])
+  }, [pathname, hash, loading, authed])
 
   useEffect(() => {
     if (!open) return
@@ -45,13 +48,16 @@ export default function Layout() {
       <header className="site-header">
         <div className="container site-header__bar">
           <Wordmark />
+          {authed && (<>
           <nav aria-label="Primary" className="nav nav--desktop">
             {NAV.map((n) => (
               <Link key={n.to} to={n.to} className="nav__link">{n.label}</Link>
             ))}
           </nav>
           <Link to="/#products" className="btn btn--primary btn--sm nav--desktop">Explore Products</Link>
-          <button
+          <button type="button" className="btn btn--quiet btn--sm nav--desktop" onClick={logout}><LogOut size={14} aria-hidden="true" /> Sign out</button>
+          </>)}
+          {authed && <button
             type="button"
             className="menu-btn"
             aria-expanded={open}
@@ -60,21 +66,22 @@ export default function Layout() {
             onClick={() => setOpen(!open)}
           >
             {open ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
-          </button>
+          </button>}
         </div>
-        {open && (
+        {authed && open && (
           <nav id="mobile-nav" aria-label="Mobile" className="mobile-nav">
             {NAV.map((n) => (
               <Link key={n.to} to={n.to} className="mobile-nav__link">{n.label}</Link>
             ))}
             <Link to="/#products" className="btn btn--primary">Explore Products</Link>
+            <button type="button" className="btn btn--quiet" onClick={logout}><LogOut size={14} aria-hidden="true" /> Sign out</button>
           </nav>
         )}
       </header>
       <main id="main" tabIndex={-1}>
-        {REVIEW_BUILD && loading ? <p className="container section" role="status">Loading inventory…</p> : <Outlet />}
+        {!authed ? <LoginPage /> : loading ? <p className="container section" role="status">Loading inventory…</p> : <Outlet />}
       </main>
-      <Footer contactUrl={company.contactUrl} />
+      <Footer contactUrl={company.contactUrl} authed={authed} />
     </>
   )
 }

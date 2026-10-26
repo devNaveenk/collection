@@ -4,7 +4,7 @@ import { catalogProducts, productPublicUrls } from '../lib/selectors'
 import ExternalLink from './ExternalLink'
 import Wordmark from './Wordmark'
 
-export default function Footer({ contactUrl }: { contactUrl: string | null }) {
+export default function Footer({ contactUrl, authed }: { contactUrl: string | null; authed: boolean }) {
   const { ds } = useDataset()
   const featured = catalogProducts(ds)
     .filter((p) => p.inventoryLinks.length && ds.entries.get(p.inventoryLinks[0]!.entryId)?.classification === 'Product')
@@ -22,6 +22,7 @@ export default function Footer({ contactUrl }: { contactUrl: string | null }) {
             information currently on record.
           </p>
         </div>
+        {authed && (<>
         <nav aria-label="Product directory">
           <h2 className="footer-h">Directory</h2>
           <ul className="footer-list">
@@ -39,6 +40,7 @@ export default function Footer({ contactUrl }: { contactUrl: string | null }) {
             ))}
           </ul>
         </nav>
+        </>)}
       </div>
       <div className="container footer-legal">
         <p>© {new Date().getFullYear()} Sonline. All rights reserved.</p>

@@ -10,9 +10,9 @@ import type {
 } from '../types'
 
 /**
- * REVIEW-ONLY DATA. This module is loaded only when the site is built with
- * VITE_REVIEW_MODE=true (see src/lib/dataset.ts). It holds VM identifiers, ports,
- * operational notes and entries withheld from the public catalog.
+ * SENSITIVE DATA. This module is loaded as a separate chunk only after sign-in (see src/lib/dataset.ts).
+ * It holds VM identifiers, ports, operational notes and entries withheld from the public catalog.
+ * The sign-in is not access control; the chunk is still served to anyone who requests its URL.
  *
  * Source: Sonline application inventory (Excel workbook), SSH-verified snapshot
  * dated 6 October 2026, as transcribed in the project brief. The workbook file

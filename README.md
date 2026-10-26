@@ -5,11 +5,23 @@ database, auth or server integrations.
 
 ```bash
 npm install
-npm run dev            # review mode (infrastructure visible), http://localhost:5173
-npm run build          # PUBLIC build: infrastructure data is not bundled
-npm run build:review   # internal review build: includes VM/port/notes data
+npm run dev
+npm run build
 npm run typecheck && npm run lint && npm test
 ```
+
+## Sign-in
+Every page shows a sign-in screen first. Approved accounts are listed in `src/data/stakeholders.ts` (email plus a
+SHA-256 hash of the password, not the password). Add one with:
+
+```bash
+node scripts/hash-password.mjs someone@sonline.us "their password"
+```
+and paste the printed line into the list. Failed attempts are capped at 60 per browser (`MAX_FAILED_ATTEMPTS`).
+
+**This is a convenience gate, not security.** The account list, the site code and the infrastructure data are all
+delivered to the browser, so anyone technical can bypass the check or read the data directly. Do not rely on it for
+anything that must stay confidential. There is no revocation, no per-user logging and no server-side attempt limit.
 
 Routes: `/` (Hero, Overview, Catalog, Infrastructure, About), `/products/:slug`. Filters live in the URL query
 (`?q=&env=&cat=&vm=&repo=1`). The host must serve `index.html` for unknown paths (SPA fallback).
@@ -35,12 +47,9 @@ file was not in the repository; values are as supplied there and should be re-ch
 `npm test` fails if an entry is not linked to exactly one product.
 
 ## Visibility and security
-- **Frontend-only visibility controls are not access control.** Anything shipped in a JS bundle is readable by every
-  visitor. The public build therefore excludes `data/internal/*` at build time (dead-code eliminated via
-  `VITE_REVIEW_MODE`), rather than hiding it with a client-side toggle. Verified by searching `dist/` for VM names.
-- The review build (and the in-page "Preview public view" toggle) is for the team only. Do not deploy it publicly; put it
-  behind real access control if it must be hosted.
-- No credentials, SSH details, private addresses or secrets exist in the repo.
+- After sign-in the infrastructure inventory (VM names, ports, notes) loads as a separate JavaScript chunk. Sign-in is
+  not access control; that chunk's URL is reachable by anyone.
+- No credentials, SSH details, private addresses or secrets exist in the repo (only password hashes, once added).
 - The infrastructure view is a recorded snapshot, not monitoring. No status is inferred; `verified-running` is unused.
 
 ## URL assumption

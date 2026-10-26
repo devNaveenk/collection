@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import type { InventoryClassification, ProductCategory } from '../data/types'
 import { useDataset } from '../lib/DatasetContext'
 import { CLASSIFICATIONS, EMPTY_FILTERS, catalogProducts, filterProducts, hasActiveFilters, productVms, type Filters } from '../lib/selectors'
+import CatalogLegend from './CatalogLegend'
 import ProductCard from './ProductCard'
 
 export default function Catalog() {
@@ -39,8 +40,13 @@ export default function Catalog() {
   return (
     <section id="products" className="section section--tint" aria-labelledby="products-title">
       <div className="container">
-        <p className="eyebrow">Product catalog</p>
-        <h2 id="products-title" className="section__title">Products and platforms</h2>
+        <div className="section__head">
+          <div>
+            <p className="eyebrow">Product catalog</p>
+            <h2 id="products-title" className="section__title">Products and platforms</h2>
+          </div>
+          <CatalogLegend />
+        </div>
         <p className="section__lede">
           Search the directory by name, description or domain. Descriptions are cautious and marked where purpose is still
           awaiting confirmation.
